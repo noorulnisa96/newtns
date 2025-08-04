@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Inventory Tracker</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7; }
+    h1 { color: #333; }
+    #inventoryTable, th, td {
+      border: 1px solid #ccc;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    #inventoryTable {
+      width: 100%;
+      margin-top: 20px;
+      background: white;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+    }
+    #scanner {
+      width: 100%;
+      max-width: 400px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Inventory Tracker</h1>
+
+  <div>
+    <input type="text" id="barcodeInput" placeholder="Enter barcode" />
+    <input type="text" id="nameInput" placeholder="Enter product name" />
+    <button onclick="addProduct()">Add Product</button>
+    <button onclick="startScanner()">Scan Barcode</button>
+  </div>
+
+  <div id="scanner"></div>
+
+  <table id="inventoryTable">
+    <thead>
+      <tr>
+        <th>Barcode</th>
+        <th>Product Name</th>
+        <th>Sold</th>
+      </tr>
+    </thead>
+    <tbody id="inventoryBody">
+    </tbody>
+  </table>
+
+<script>
+  let inventory = {};
+
+  function addProduct() {
+    const barcode = document.getElementById("barcodeInput").value.trim();
+    const name = document.getElementById("nameInput").value.trim();
+    if (barcode && name) {
+      if (!inventory[barcode]) {
+        inventory[barcode] = { name: name, sold: 0 };
+        renderInventory();
+        alert("Product added.");
+      } else {
+        alert("Product already exists.");
+      }
+    } else {
+      alert("Enter both barcode and name.");
+    }
+  }
+
+  function renderInventory() {
+    const tbody = document.getElementById("inventoryBody");
+    tbody.innerHTML = "";
+    for (const [barcode, data] of Object.entries(inventory)) {
+      const row = `<tr><td>${barcode}</td><td>${data.name}</td><td>${data.sold}</td></tr>`;
+      tbody.innerHTML += row;
+    }
+  }
+
+  function startScanner() {
+    const scannerDiv = document.getElementById("scanner");
+    scannerDiv.innerHTML = ""; // Reset scanner area
+
+    const html5QrCode = new Html5Qrcode("scanner");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      (barcode) => {
+        if (inventory[barcode]) {
+          inventory[barcode].sold += 1;
+          renderInventory();
+        } else {
+          alert("Scanned barcode not found in inventory.");
+        }
+        html5QrCode.stop().then(() => {
+          scannerDiv.innerHTML = "";
+        });
+      },
+      (err) => {
+        console.warn("Scan error", err);
+      }
+    ).catch(err => {
+      console.error("Camera start error", err);
+    });
+  }
+</script>
+</body>
+</html>
